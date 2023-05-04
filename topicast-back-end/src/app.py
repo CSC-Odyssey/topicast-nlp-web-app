@@ -9,7 +9,7 @@ def handle_form_submission():
     # checkbox2 = request.form.get("checkbox2")
     # checkbox3 = request.form.get("checkbox3")
     # Do something with the form data here...
-    return {"message": ["test1", "test2"]}
+    return {"message": ["??", "???"]}
 
 
 if __name__ == '__main__':
