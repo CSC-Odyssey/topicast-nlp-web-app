@@ -1,21 +1,32 @@
 import React, { useState, useEffect } from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import axios from "axios";
 
 import logo from './assets/topicast_logo.png';
 
 const App = () => {
   const [checkbox1, setCheckbox1] = useState(false);
   const [checkbox2, setCheckbox2] = useState(false);
-  const [checkbox3, setCheckbox3] = useState(false);
   const [textInput, setTextInput] = useState("");
+
+  const [selectedDate, setSelectedDate] = useState(null);
 
   const [data, setData] = useState([]);
 
-  const HandleSubmit = () => {
-    console.log(checkbox1, checkbox2, checkbox3);
-    fetch('/api/hello').then(response =>
-      response.json().then(data => {
-        setData(data)
-      }))
+  const HandleSubmit = (e) => {
+    e.preventDefault();
+    axios.post("/api/retrieve_topics", {
+      checkbox1: checkbox1,
+      checkbox2: checkbox2
+    })
+      .then(response => {
+        console.log(response.data);
+        setData(response.data);
+      })
+      .catch(error => {
+        console.log(error);
+      });
   };
 
   return (
@@ -42,18 +53,18 @@ const App = () => {
               checked={checkbox2}
               onChange={(e) => setCheckbox2(e.target.checked)}
             />
-            <span className="ml-2 text-xl text-gray-700 font-semibold">Philstar</span>
-          </label>
-          <label className="inline-flex items-center">
-            <input
-              type="checkbox"
-              className="form-checkbox h-7 w-7 m-4 text-green-500"
-              checked={checkbox3}
-              onChange={(e) => setCheckbox3(e.target.checked)}
-            />
             <span className="ml-2 text-xl text-gray-700 font-semibold">Baguio News</span>
           </label>
         </div>
+
+      </div>
+      <div className="flex items-center mb-5">
+        <DatePicker
+          className="border border-gray-400 p-2 rounded-md text-gray-600"
+          selected={selectedDate}
+          onChange={(date) => setSelectedDate(date)}
+          placeholderText="Select a date"
+        />
       </div>
       <div className="flex flex-row justify-center w-full">
         <button
@@ -70,9 +81,7 @@ const App = () => {
         {(typeof data.message === "undefined") ? (
           <p>Loading...</p>
         ) : (
-          data.message.map((message, i) => (
-            <p key={i}>{message}</p>
-          ))
+          <p>{data.message}</p>
         )}
       </div>
     </div>
