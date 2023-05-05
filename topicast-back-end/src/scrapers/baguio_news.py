@@ -9,13 +9,7 @@ from datetime import datetime
 import re
 import time
 
-compiled = {
-    "title": [],
-    "date": [],
-    "content": []
-}
-
-def scrape_sunstar(date):
+def scrape_baguio_news(date):
     options = webdriver.ChromeOptions()
     options.add_argument('--incognito')
 
@@ -67,9 +61,4 @@ def scrape_sunstar(date):
             
         break
 
-    print(b_news)
-    return None
-
-
-if __name__ == '__main__':
-    scrape_sunstar("d")
+    return b_news
