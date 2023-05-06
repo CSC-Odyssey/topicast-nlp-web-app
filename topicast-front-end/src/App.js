@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import axios from "axios";
+import Card from "./components/Card";
 
 import logo from './assets/topicast_logo.png';
 
@@ -10,24 +11,31 @@ const App = () => {
   const [checkbox2, setCheckbox2] = useState(false);
   const [textInput, setTextInput] = useState("");
 
+  const [processing, setProcessing] = useState(false);
+
   const [selectedDate, setSelectedDate] = useState(null);
 
-  const [data, setData] = useState([]);
+  const [data, setData] = useState(null);
 
   const HandleSubmit = (e) => {
     e.preventDefault();
+    setProcessing(true);
     axios.post("/api/retrieve_topics", {
       checkbox1: checkbox1,
-      checkbox2: checkbox2
+      checkbox2: checkbox2,
+      selectedDate: selectedDate.toLocaleDateString()
     })
       .then(response => {
         console.log(response.data);
         setData(response.data);
+        setProcessing(false);
+        console.log(data)
       })
       .catch(error => {
         console.log(error);
       });
   };
+  
 
   return (
     <div className="flex flex-col justify-center items-center p-5">
@@ -62,6 +70,7 @@ const App = () => {
         <DatePicker
           className="border border-gray-400 p-2 rounded-md text-gray-600"
           selected={selectedDate}
+          dateFormat='yyyy-MM-dd'
           onChange={(date) => setSelectedDate(date)}
           placeholderText="Select a date"
         />
@@ -77,13 +86,38 @@ const App = () => {
           Idk
         </button> */}
       </div>
-      <div className="flex flex-col mt-5">
-        {(typeof data.message === "undefined") ? (
-          <p>Loading...</p>
-        ) : (
-          <p>{data.message}</p>
-        )}
-      </div>
+
+      {data && (
+        <div className="flex flex-col mt-5">
+          <div className="flex flex-wrap justify-center">
+            {Object.keys(data).map((topic, index) => (
+              <Card key={index} title={topic} words={data[topic]} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Modal to display "processing data" message */}
+      {processing && (
+        <div className="fixed z-10 inset-0 overflow-y-auto pt-8">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity">
+              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+
+            <div
+              className="inline-block align-middle bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:align-middle sm:max-w-lg sm:w-full"
+            >
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <p className="text-sm leading-5 font-medium text-gray-900">
+                  Processing data...
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

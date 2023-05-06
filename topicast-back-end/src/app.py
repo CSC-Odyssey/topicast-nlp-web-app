@@ -1,12 +1,13 @@
 from flask import Flask, request, jsonify
-
+from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+
 import pandas as pd
 
 from baguio_mc import scrape_bmc_news
 from baguio_news import scrape_baguio_news
-from lda import initiate_topic_modelling
+from initiate_lda import initiate_topic_modelling
 
 compiled_data = {
     "title": [],
@@ -31,15 +32,27 @@ def handle_form_submission():
 def handle_retrieve_topics():
     midlandbox = request.json['checkbox1']
     baguionews = request.json['checkbox2']
+    selectedDate = request.json['selectedDate']
+    parsed_date = datetime.strptime(selectedDate, "%m/%d/%Y").strftime("%Y-%m-%d")
+
+    website_str = ""
 
     if (midlandbox and baguionews):
-        return jsonify({'message': ["midlandbox", "baguionews"]})
+        website_str = "both"
     elif midlandbox:
-        return jsonify({'message': "midlandbox"})
+        website_str = "baguio_mc"
     elif baguionews:
-        return jsonify({'message': "baguionews"})
+        website_str = "baguio_news"
+    else:
+        website_str = "none"
+
+    results = initiate_topic_modelling(parsed_date, website_str)
+
+    if results:
+        return jsonify(results)
     else:
         return jsonify({'message': "none"})
+    
 
 
 if __name__ == '__main__':

@@ -7,6 +7,7 @@ import pyLDAvis.gensim_models
 import pyLDAvis.gensim_models as gensimvis
 import json
 
+from multiprocessing import Process, Manager
 from collections import Counter
 from nltk.corpus import stopwords
 from gensim import corpora, models
@@ -15,6 +16,9 @@ from collections import defaultdict
 
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+
+from baguio_mc import scrape_bmc_news
+from baguio_news import scrape_baguio_news
 
 
 def preprocess_text(text, threshold=2):
@@ -91,22 +95,48 @@ def start_lda(preprocessed_content):
         topic_terms = [term for term, _ in lda_model.show_topic(i, topn=12)]
         topics[topic_num] = topic_terms
 
-        if i == 2:  # stop after getting the top 3 topics
+        if i == 4:  # stop after getting the top 3 topics
             break
 
-    with open("topics.json", "w") as f:
-        json.dump(topics, f)
+    return topics
+
+
+def initiate_topic_modelling(date, website_str):
+    data = {}
+
+    manager = Manager()
+    return_dict = manager.dict()
+
+    if website_str == "both":
+        p1 = Process(target=scrape_baguio_news, args=(str(date), return_dict))
+        p2 = Process(target=scrape_bmc_news, args=(str(date), return_dict))
+        p1.start()
+        p2.start()
+        p1.join()
+        p2.join()
+
+        merged_dict = {k: return_dict['baguio_news'].get(k, []) + return_dict['baguio_mc'].get(k, []) for k in set(return_dict['baguio_news'].keys()) | set(return_dict['baguio_mc'].keys())}
+        data.update(merged_dict)
     
-    print("\n")
+    elif website_str == "baguio_news":
+        p1 = Process(target=scrape_baguio_news, args=(str(date), return_dict))
+        p1.start()
+        p1.join()
+        data.update(return_dict['baguio_news'])
 
+    elif website_str == "baguio_mc":
+        p2 = Process(target=scrape_bmc_news, args=(str(date), return_dict))
+        p2.start()
+        p2.join()
+        data.update(return_dict['baguio_mc'])
+    
+    else:
+        return "Unknown website"
 
-def initiate_topic_modelling(data):
-    df = pd.from_dict(data)
+    df = pd.DataFrame.from_dict(data)
     # Extract text data from content column and preprocess it
     df['preprocessed_content'] = df['content'].apply(preprocess_text)
 
-    start_lda(df['preprocessed_content'])
+    return start_lda(df['preprocessed_content'])
 
 
-if __name__ == '__main__':
-    initiate_topic_modelling()
