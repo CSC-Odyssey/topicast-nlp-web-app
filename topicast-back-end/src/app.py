@@ -5,8 +5,6 @@ from selenium.webdriver.common.by import By
 
 import pandas as pd
 
-from baguio_mc import scrape_bmc_news
-from baguio_news import scrape_baguio_news
 from initiate_lda import initiate_topic_modelling
 
 compiled_data = {
@@ -14,7 +12,6 @@ compiled_data = {
     "date": [],
     "content": []
 }
-
 
 
 app = Flask(__name__)
@@ -30,6 +27,7 @@ def handle_form_submission():
 
 @app.route("/api/retrieve_topics", methods=["POST"])
 def handle_retrieve_topics():
+    
     midlandbox = request.json['checkbox1']
     baguionews = request.json['checkbox2']
     selectedDate = request.json['selectedDate']
@@ -37,23 +35,26 @@ def handle_retrieve_topics():
 
     website_str = ""
 
-    if (midlandbox and baguionews):
-        website_str = "both"
-    elif midlandbox:
-        website_str = "baguio_mc"
-    elif baguionews:
-        website_str = "baguio_news"
-    else:
-        website_str = "none"
+    print("Running")
+    return jsonify({'message': "none"})
 
-    results = initiate_topic_modelling(parsed_date, website_str)
+    # if (midlandbox and baguionews):
+    #     website_str = "both"
+    # elif midlandbox:
+    #     website_str = "baguio_mc"
+    # elif baguionews:
+    #     website_str = "baguio_news"
+    # else:
+    #     website_str = "none"
 
-    if results:
-        return jsonify(results)
-    else:
-        return jsonify({'message': "none"})
+    # results = initiate_topic_modelling(parsed_date, website_str)
+
+    # if results:
+    #     return jsonify(results)
+    # else:
+    #     return jsonify({'message': "none"})
     
 
 
 if __name__ == '__main__':
-    app.run(host='localhost', port=5000, debug=True)
+    app.run(host='localhost', port=5000, debug=True, passthrough_errors=True, use_debugger=False, use_reloader=False)

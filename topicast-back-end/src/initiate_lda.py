@@ -17,8 +17,8 @@ from collections import defaultdict
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 
-from baguio_mc import scrape_bmc_news
-from baguio_news import scrape_baguio_news
+from baguio_mc import mc_navigate_scrape_website
+from baguio_news import bn_navigate_scrape_website
 
 
 def preprocess_text(text, threshold=2):
@@ -108,8 +108,8 @@ def initiate_topic_modelling(date, website_str):
     return_dict = manager.dict()
 
     if website_str == "both":
-        p1 = Process(target=scrape_baguio_news, args=(str(date), return_dict))
-        p2 = Process(target=scrape_bmc_news, args=(str(date), return_dict))
+        p1 = Process(target=bn_navigate_scrape_website, args=(str(date), return_dict))
+        p2 = Process(target=mc_navigate_scrape_website, args=(str(date), return_dict))
         p1.start()
         p2.start()
         p1.join()
@@ -119,13 +119,13 @@ def initiate_topic_modelling(date, website_str):
         data.update(merged_dict)
     
     elif website_str == "baguio_news":
-        p1 = Process(target=scrape_baguio_news, args=(str(date), return_dict))
+        p1 = Process(target=bn_navigate_scrape_website, args=(str(date), return_dict))
         p1.start()
         p1.join()
         data.update(return_dict['baguio_news'])
 
     elif website_str == "baguio_mc":
-        p2 = Process(target=scrape_bmc_news, args=(str(date), return_dict))
+        p2 = Process(target=mc_navigate_scrape_website, args=(str(date), return_dict))
         p2.start()
         p2.join()
         data.update(return_dict['baguio_mc'])

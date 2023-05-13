@@ -1,136 +1,90 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-import pandas as pd
-from selenium.common.exceptions import NoSuchElementException
-from datetime import datetime
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.keys import Keys
 from queue import Queue
 
-bmc_news = {'title': [], 'date': [], 'content': []}
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+from datetime import datetime
+import re
+import time
 
-def scrape_article(driver):
+def scrape_article(url):
+    response = requests.get(str(url))
+    soup = BeautifulSoup(response.content, 'html.parser')
+
     title = ''
     date = ''
     content =''
 
     try:
-        title = driver.find_element(By.CLASS_NAME, "entry-title").text
-        date = driver.find_element(By.CLASS_NAME, "entry-meta").text
+        title = soup.find('h1', attrs={'class': 'entry-title'}).text.strip()
+        date = soup.find('span', attrs={'class': 'item-metadata posts-date'}).text.strip()
         try:
-            content = driver.find_element(By.CLASS_NAME, 'wp-element-caption').text # For captions
+            content_raw = soup.find('div', attrs={'class': 'entry-content read-details'}).text.strip()
+            delimiter = 'Continue Reading'
+            content = content_raw.split(delimiter)[0]
         except NoSuchElementException:
             pass
-        contents = driver.find_elements(By.TAG_NAME, 'p') # For p elements
-
-        for c in contents:
-                content = content + " " + c.text
-
     except NoSuchElementException:
-        print("error")
+        pass
 
     if len(title) == 0 or len(date) == 0  or len(content) == 0 :
-        print("error")
-        pass
+        return ['empty', 'empty', 'empty']
     else:
-        bmc_news['title'].append(title)
-        bmc_news['date'].append(date)
-        bmc_news['content'].append(content)
-
-    return bmc_news
+        return [title, date, content]
 
 
-def scrape_bmc_news(date, return_dict):
-    options = webdriver.ChromeOptions()
+def mc_navigate_scrape_website(user_input_date, return_dict):
+    user_input_date = str(user_input_date)
 
-    url = 'https://www.baguiomidlandcourier.com.ph/'
-    driver = webdriver.Chrome(options = options)
-    driver.get(url)
+    url = 'https://www.baguiomidlandcourier.com.ph/category/city/'
+    counter = 0
 
-    news_link = driver.find_element(By.CSS_SELECTOR, '.read-img.pos-rel.read-bg-img')
-    next = news_link.find_element(By.TAG_NAME, 'a')
-    newl = next.get_attribute('href')
+    links = []
 
-    driver.implicitly_wait(10)
-    driver.get(newl)
+    while (url is not None) and (counter != 10):
+        try:
+            response = requests.get(url)
+            soup = BeautifulSoup(response.content, 'html.parser')
+            main_container = soup.find('div', attrs={'id': 'aft-archive-wrapper'})
 
-    news_date = driver.find_element(By.CLASS_NAME, 'entry-meta').text
-    current_article_date = datetime.strptime(news_date, "%B %d, %Y").date()
-    print(current_article_date)
-    input_date = datetime.strptime(date, "%Y-%m-%d").date()
-    print(input_date)
+            for news_div in soup.find_all('div', attrs={'class' : 'col-66 float-l pad read-details color-tp-pad'}):
+                news_div_date = news_div.find('span', attrs={'class' : 'item-metadata posts-date'}).text.strip()
+                news_div_date_formatted = datetime.strptime(news_div_date, '%B %d, %Y').strftime('%Y-%m-%d')
 
-    while True:
-        if current_article_date == input_date:
-            # scrape article
-            bmc_news = scrape_article(driver)
-            
-            # go to previous article
-            while current_article_date == input_date:
-                try:
-                    link = driver.find_element(By.CLASS_NAME, 'nav-previous')
-                    next = link.find_element(By.TAG_NAME, 'a')
-                    newl = next.get_attribute('href')
+                if user_input_date == news_div_date_formatted:
+                    news_div_title = news_div.find('div', attrs={'class' : 'read-title'})
+                    news_div_h4 = news_div_title.find('h4')
+                    news_div_href = news_div_h4.find('a').get('href')
+                    links.append(news_div_href)
 
-                    driver.get(newl)
-                    driver.implicitly_wait(10)
+            next_page_url = soup.find('a', attrs={'class' : 'next page-numbers'}).get('href')
+            if next_page_url is not None:
+                url = str(next_page_url)
+            else:
+                url = None
 
-                    bmc_news = scrape_article(driver)
+            counter += 1
+        except:
+            pass
 
-                    news_date = driver.find_element(By.CLASS_NAME, 'entry-meta').text
-                    current_article_date = datetime.strptime(news_date, "%B %d, %Y").date()
-                except NoSuchElementException:
-                    break
-            break;
+    bmc_news = {'title': [], 'date': [], 'content': []}
+    for url in links:
+        bmc_news_list = scrape_article(url)
+        bmc_news['title'].append(bmc_news_list[0])
+        bmc_news['date'].append(user_input_date)
+        bmc_news['content'].append(bmc_news_list[2])
 
-            try:
-                link = driver.find_element(By.CLASS_NAME, 'nav-previous')
-                next = link.find_element(By.TAG_NAME, 'a')
-                newl = next.get_attribute('href')
-
-                driver.implicitly_wait(10)
-                driver.get(newl)
-                driver.implicitly_wait(10)
-
-                news_date = driver.find_element(By.CLASS_NAME, 'entry-meta').text
-                current_article_date = datetime.strptime(news_date, "%B %d, %Y").date()
-            except NoSuchElementException:
-                break
-
-        elif current_article_date > input_date:
-            # go to previous page
-            try:
-                link = driver.find_element(By.CLASS_NAME, 'nav-previous')
-                next = link.find_element(By.TAG_NAME, 'a')
-                newl = next.get_attribute('href')
-
-                driver.get(newl)
-                driver.implicitly_wait(10)
-
-                news_date = driver.find_element(By.CLASS_NAME, 'entry-meta').text
-                current_article_date = datetime.strptime(news_date, "%B %d, %Y").date()
-            except NoSuchElementException:
-                break
-
-        else:
-            # go to next page
-            try:
-                link = driver.find_element(By.CLASS_NAME, 'nav-next')
-                next = link.find_element(By.TAG_NAME, 'a')
-                newl = next.get_attribute('href')
-
-                driver.get(newl)
-                driver.implicitly_wait(10)
-
-                news_date = driver.find_element(By.CLASS_NAME, 'entry-meta').text
-                current_article_date = datetime.strptime(news_date, "%B %d, %Y").date()
-            except NoSuchElementException:
-                break
-     
-    driver.close()
-    # return bmc_news
-    return_dict["baguio_mc"] = bmc_news
-
-
+    if bmc_news:
+        return_dict["baguio_mc"] = bmc_news
+    else:
+        return ['No data']
+    
 
 if __name__ == "__main__":
     param = sys.argv[1]
-    result = scrape_bmc_news(param)
+    result = mc_navigate_scrape_website(param)
