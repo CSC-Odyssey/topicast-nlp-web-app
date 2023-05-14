@@ -61,7 +61,7 @@ def get_optimal_num_topics(articles):
     
     coherence_scores = defaultdict(list)
     
-    for num_topics in range(2, 10):
+    for num_topics in range(2, 7):
         lda_model = models.LdaModel(corpus, num_topics=num_topics, id2word=dictionary, passes=10)
         coherence_model_lda = CoherenceModel(model=lda_model, texts=texts, dictionary=dictionary, coherence='c_v')
         coherence_score = coherence_model_lda.get_coherence()
@@ -94,7 +94,7 @@ def start_lda(preprocessed_content):
     
     for i in range(len(vis_data.topic_coordinates)):
         topic_num = f"Topic {i+1}"
-        topic_terms = [term for term, _ in lda_model.show_topic(i, topn=12)]
+        topic_terms = [term for term, _ in lda_model.show_topic(i, topn=20)]
         topics[topic_num] = topic_terms
 
         if i == 4:  # stop after getting the top 3 topics
