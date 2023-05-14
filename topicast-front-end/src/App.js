@@ -3,7 +3,6 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import axios from "axios";
 import Card from "./components/Card";
-
 import logo from './assets/topicast_logo.png';
 
 const App = () => {
@@ -20,14 +19,14 @@ const App = () => {
   const HandleSubmit = (e) => {
     e.preventDefault();
     setProcessing(true);
-    axios.post("/api/retrieve_topics", {
+    axios.post("http://localhost:5000/api/retrieve_topics", {
       checkbox1: checkbox1,
       checkbox2: checkbox2,
       selectedDate: selectedDate.toLocaleDateString()
-    })
+    }, { headers: { 'Content-Type': 'application/json' } })
       .then(response => {
         console.log(response.data);
-        setData(response.data);
+        setData(response.data[0]);
         setProcessing(false);
         console.log(data)
       })
@@ -35,7 +34,7 @@ const App = () => {
         console.log(error);
       });
   };
-  
+
 
   return (
     <div className="flex flex-col justify-center items-center p-5">

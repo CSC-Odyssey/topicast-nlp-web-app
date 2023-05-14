@@ -23,6 +23,8 @@ from baguio_news import bn_navigate_scrape_website
 
 def preprocess_text(text, threshold=2):
     months = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
+    html_tags = ["!DOCTYPE", "html", "head", "title", "body", "h1", "h2", "h3", "h4", "h5", "p", "br", "hr", "!--...--", "span", "rgb", "style", "label", "input", "textarea", "button", "select"]
+    common_words = ["baguio", "color", "city"]
 
     # Instantiate stop words
     stop_words = stopwords.words('english')
@@ -37,6 +39,8 @@ def preprocess_text(text, threshold=2):
     
     # Tokenize words
     tokens = word_tokenize(text)
+    tokens = [token for token in tokens if token not in common_words]
+    tokens = [token for token in tokens if token not in html_tags]
     # Remove stop words
     tokens = [token for token in tokens if token not in stop_words]
     # Remove short words
@@ -83,8 +87,6 @@ def start_lda(preprocessed_content):
     # calculate the coherence score for the model
     coherence_model_lda = CoherenceModel(model=lda_model, texts=texts, dictionary=dictionary, coherence='c_v')
     coherence_score = coherence_model_lda.get_coherence()
-    print(f"Coherence Score: {coherence_score}")
-
 
     vis_data = pyLDAvis.gensim_models.prepare(lda_model, corpus, dictionary)
 
@@ -98,7 +100,7 @@ def start_lda(preprocessed_content):
         if i == 4:  # stop after getting the top 3 topics
             break
 
-    return topics
+    return [topics, {"coherence_score" : coherence_score}]
 
 
 def initiate_topic_modelling(date, website_str):
@@ -137,6 +139,7 @@ def initiate_topic_modelling(date, website_str):
     # Extract text data from content column and preprocess it
     df['preprocessed_content'] = df['content'].apply(preprocess_text)
 
-    return start_lda(df['preprocessed_content'])
+    preprocessed_content = start_lda(df['preprocessed_content'])
+    return [preprocessed_content[0], preprocessed_content[1]]
 
 

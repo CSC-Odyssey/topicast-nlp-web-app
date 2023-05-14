@@ -82,7 +82,7 @@ def mc_navigate_scrape_website(user_input_date, return_dict):
     if bmc_news:
         return_dict["baguio_mc"] = bmc_news
     else:
-        return ['No data']
+        return_dict['baguio_mc'] = bmc_news
     
 
 if __name__ == "__main__":

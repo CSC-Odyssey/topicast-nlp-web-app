@@ -91,7 +91,7 @@ def bn_navigate_scrape_website(user_input_date, return_dict):
         if bn_news:
             return_dict['baguio_news'] = bn_news
         else:
-            return ['No data']
+            return_dict['baguio_news'] = bn_news
 
     else:
         return ['none']
