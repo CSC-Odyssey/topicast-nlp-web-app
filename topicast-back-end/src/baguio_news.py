@@ -40,6 +40,8 @@ def scrape_article(slug, user_input_date):
     title = ''
     date = ''
     content =''
+
+    # repeatable process           
     
     try:
         if response.status_code == 200:

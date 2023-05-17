@@ -8,12 +8,6 @@ import pandas as pd
 from initiate_lda import initiate_topic_modelling
 
 app = Flask(__name__)
-# CORS(app)
-# cors = CORS(app, resources={
-#     r"/*" : {
-#         "origins" : "*"
-#     }
-# })
 
 @app.route("/api/hello")
 def handle_form_submission():
